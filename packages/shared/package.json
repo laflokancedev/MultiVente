@@ -1,0 +1,7 @@
+{
+  "name": "@multimarket/shared",
+  "version": "0.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "test": "echo \"no tests\" && exit 0" }
+}
