@@ -138,7 +138,7 @@ services:
       POSTGRES_USER: multimarket
       POSTGRES_PASSWORD: multimarket
       POSTGRES_DB: multimarket
-    ports: ["5432:5432"]
+    ports: ["5433:5432"]   # host 5433 -> container 5432 (host 5432 may be used by another project)
     volumes: ["mm_pg:/var/lib/postgresql/data"]
   redis:
     image: redis:7
@@ -287,7 +287,7 @@ git commit -m "feat(shared): add auth types package"
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.0",
     "@prisma/client": "^5.18.0",
-    "argon2": "^0.40.3",
+    "@node-rs/argon2": "^2.0.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "passport": "^0.7.0",
@@ -469,7 +469,7 @@ model User {
 
 `apps/api/.env.example`:
 ```
-DATABASE_URL="postgresql://multimarket:multimarket@localhost:5432/multimarket?schema=public"
+DATABASE_URL="postgresql://multimarket:multimarket@localhost:5433/multimarket?schema=public"
 JWT_ACCESS_SECRET="dev-access-secret-change-me"
 JWT_REFRESH_SECRET="dev-refresh-secret-change-me"
 WEB_ORIGIN="http://localhost:3000"
@@ -629,7 +629,7 @@ Expected: FAIL — cannot find module `./auth.service`.
 ```ts
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as argon2 from 'argon2';
+import { hash, verify } from '@node-rs/argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthResponse, AuthUser } from '@multimarket/shared';
 
@@ -656,7 +656,7 @@ export class AuthService {
   async register(input: { email: string; password: string }): Promise<AuthResponse> {
     const existing = await this.prisma.user.findUnique({ where: { email: input.email } });
     if (existing) throw new ConflictException('Email already registered');
-    const passwordHash = await argon2.hash(input.password);
+    const passwordHash = await hash(input.password);
     const created = await this.prisma.user.create({
       data: { email: input.email, passwordHash },
     });
@@ -667,7 +667,7 @@ export class AuthService {
   async login(input: { email: string; password: string }): Promise<AuthResponse> {
     const found = await this.prisma.user.findUnique({ where: { email: input.email } });
     if (!found) throw new UnauthorizedException('Invalid credentials');
-    const valid = await argon2.verify(found.passwordHash, input.password);
+    const valid = await verify(found.passwordHash, input.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
     const user = this.toAuthUser(found);
     return { user, tokens: await this.issueTokens(user) };
@@ -722,7 +722,7 @@ describe('AuthService.login', () => {
 });
 ```
 
-> Note: the in-memory `prisma` mock from Task 6 stores the real argon2 hash via `create`, so `argon2.verify` runs for real in these tests.
+> Note: the in-memory `prisma` mock from Task 6 stores the real argon2 hash via `create`, so `verify` (from `@node-rs/argon2`) runs for real in these tests.
 
 - [ ] **Step 2: Run the tests to verify login passes**
 
