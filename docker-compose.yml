@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: multimarket
+      POSTGRES_PASSWORD: multimarket
+      POSTGRES_DB: multimarket
+    ports: ["5432:5432"]
+    volumes: ["mm_pg:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+volumes:
+  mm_pg:
