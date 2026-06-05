@@ -1,0 +1,10 @@
+{
+  "name": "multimarket",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev:api": "pnpm --filter @multimarket/api start:dev",
+    "dev:web": "pnpm --filter @multimarket/web dev",
+    "test": "pnpm -r test"
+  }
+}
