@@ -138,11 +138,11 @@ services:
       POSTGRES_USER: multimarket
       POSTGRES_PASSWORD: multimarket
       POSTGRES_DB: multimarket
-    ports: ["5433:5432"]   # host 5433 -> container 5432 (host 5432 may be used by another project)
+    ports: ["127.0.0.1:5433:5432"]   # loopback only; host 5433 -> container 5432 (host 5432 may be used by another project)
     volumes: ["mm_pg:/var/lib/postgresql/data"]
   redis:
     image: redis:7
-    ports: ["6379:6379"]
+    ports: ["127.0.0.1:6379:6379"]   # loopback only
 volumes:
   mm_pg:
 ```
