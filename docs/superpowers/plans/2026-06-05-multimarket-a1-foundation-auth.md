@@ -689,6 +689,16 @@ git commit -m "feat(api): auth service register with argon2 + token issue"
 
 ---
 
+> **Security hardening applied during implementation (commit `d0c9567`).** The
+> committed code differs from the snippets above following an automated security
+> review: `login` verifies against a cached dummy argon2 hash when the account is
+> missing (timing-safe — no user enumeration); emails are normalized (trim +
+> lowercase) in the DTOs via `@Transform` and defensively in `AuthService`; both
+> DTOs add `@MaxLength(128)` on `password` (bounds argon2 work). A
+> normalization regression test was added (6 auth-service tests total).
+
+---
+
 ## Task 7: Auth service — login (TDD)
 
 **Files:**
