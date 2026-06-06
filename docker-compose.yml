@@ -14,5 +14,26 @@ services:
   redis:
     image: redis:7
     ports: ["127.0.0.1:6379:6379"]
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes: ["mm_minio:/data"]
+  createbuckets:
+    image: minio/mc:latest
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin) do echo waiting; sleep 2; done;
+      /usr/bin/mc mb -p local/multimarket;
+      /usr/bin/mc anonymous set download local/multimarket;
+      exit 0;
+      "
 volumes:
   mm_pg:
+  mm_minio:
