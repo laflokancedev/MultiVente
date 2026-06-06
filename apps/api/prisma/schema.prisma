@@ -18,4 +18,49 @@ model User {
   passwordHash String
   plan         Plan     @default(free)
   createdAt    DateTime @default(now())
+  listings     Listing[]
+}
+
+enum ListingStatus {
+  draft
+  active
+  sold
+  archived
+}
+
+enum Condition {
+  new
+  like_new
+  good
+  fair
+}
+
+model Listing {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  priceCents      Int
+  currency        String         @default("EUR")
+  category        String
+  condition       Condition
+  brand           String?
+  color           String?
+  size            String?
+  location        String?
+  shippingOptions Json           @default("{}")
+  status          ListingStatus  @default(draft)
+  photos          ListingPhoto[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model ListingPhoto {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
 }
