@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { AssistedPayload, Marketplace } from '@multimarket/shared';
@@ -97,5 +97,18 @@ export class PublishService {
     const adapter = this.registry.get(pub.marketplace as Marketplace);
     if (!adapter.buildAssistedPayload) throw new NotFoundException('Not an assisted marketplace');
     return adapter.buildAssistedPayload(adapter.mapListing(this.toAdapterInput(listing)));
+  }
+
+  async markPosted(userId: string, publicationId: string, externalUrl?: string) {
+    const pub = await this.prisma.publication.findUnique({ where: { id: publicationId } });
+    if (!pub) throw new NotFoundException('Publication not found');
+    await this.ownedListing(userId, pub.listingId); // throws 404/403
+    if (pub.status !== 'awaiting_user') {
+      throw new ConflictException('Publication is not awaiting user action');
+    }
+    return this.prisma.publication.update({
+      where: { id: publicationId },
+      data: { status: 'published', externalUrl: externalUrl ?? null, publishedAt: new Date(), error: null },
+    });
   }
 }

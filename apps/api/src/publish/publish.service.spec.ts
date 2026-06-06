@@ -68,4 +68,27 @@ describe('PublishService', () => {
     expect(payload.deepLink).toContain('vinted');
     expect(payload.pasteText).toContain('Veste');
   });
+
+  it('marks an awaiting_user publication as posted (published)', async () => {
+    const { svc } = makeService();
+    const [pub] = await svc.publishEverywhere('user1', 'l1', ['VINTED']);
+    await svc.processPublication(pub.id); // -> awaiting_user
+    const done = await svc.markPosted('user1', pub.id, 'https://www.vinted.fr/items/123');
+    expect(done.status).toBe('published');
+    expect(done.externalUrl).toBe('https://www.vinted.fr/items/123');
+  });
+
+  it('rejects marking a publication that is not awaiting_user', async () => {
+    const { svc } = makeService();
+    const [pub] = await svc.publishEverywhere('user1', 'l1', ['EBAY']);
+    await svc.processPublication(pub.id); // auto -> published
+    await expect(svc.markPosted('user1', pub.id)).rejects.toThrow();
+  });
+
+  it('rejects marking a publication the user does not own', async () => {
+    const { svc } = makeService();
+    const [pub] = await svc.publishEverywhere('user1', 'l1', ['VINTED']);
+    await svc.processPublication(pub.id);
+    await expect(svc.markPosted('otheruser', pub.id)).rejects.toThrow();
+  });
 });
