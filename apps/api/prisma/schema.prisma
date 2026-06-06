@@ -52,6 +52,7 @@ model Listing {
   shippingOptions Json           @default("{}")
   status          ListingStatus  @default(draft)
   photos          ListingPhoto[]
+  publications    Publication[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -63,4 +64,41 @@ model ListingPhoto {
   url       String
   order     Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+enum Marketplace {
+  EBAY
+  VINTED
+  LEBONCOIN
+}
+
+enum PublishMode {
+  auto
+  assisted
+}
+
+enum PublicationStatus {
+  pending
+  awaiting_user
+  published
+  failed
+  sold
+  expired
+}
+
+model Publication {
+  id          String            @id @default(cuid())
+  listingId   String
+  listing     Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  marketplace Marketplace
+  mode        PublishMode
+  status      PublicationStatus @default(pending)
+  externalId  String?
+  externalUrl String?
+  error       String?
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([listingId, marketplace])
 }
