@@ -56,3 +56,16 @@ describe('AuthService.login', () => {
       .rejects.toThrow('Invalid credentials');
   });
 });
+
+describe('AuthService email normalization', () => {
+  it('treats different-cased emails as the same account', async () => {
+    const svc = makeService();
+    await svc.register({ email: 'User@Example.com', password: 'password123' });
+    // A duplicate under different casing must be rejected.
+    await expect(svc.register({ email: 'user@example.com', password: 'password123' }))
+      .rejects.toBeInstanceOf(ConflictException);
+    // Login succeeds regardless of input casing; stored email is normalized.
+    const res = await svc.login({ email: 'USER@EXAMPLE.COM', password: 'password123' });
+    expect(res.user.email).toBe('user@example.com');
+  });
+});
