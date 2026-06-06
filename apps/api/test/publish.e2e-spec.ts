@@ -66,6 +66,42 @@ describe('Publish (e2e)', () => {
     expect(assisted.body.deepLink).toContain('vinted');
   }, 30000);
 
+  it('lets the user mark an assisted publication as posted', async () => {
+    const list = await request(app.getHttpServer())
+      .get(`/listings/${listingId}/publications`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const vinted = list.body.find((p: any) => p.marketplace === 'VINTED');
+    expect(vinted.status).toBe('awaiting_user');
+
+    const res = await request(app.getHttpServer())
+      .patch(`/publications/${vinted.id}/posted`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ externalUrl: 'https://www.vinted.fr/items/999' })
+      .expect(200);
+    expect(res.body.status).toBe('published');
+    expect(res.body.externalUrl).toBe('https://www.vinted.fr/items/999');
+  });
+
+  it('returns dashboard stats for the user', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/dashboard')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body.activeListings).toBeGreaterThanOrEqual(1);
+    expect(res.body.byMarketplace).toHaveLength(3);
+    expect(res.body).toHaveProperty('publicationsByStatus');
+  });
+
+  it('authenticates via the access_token query param (for SSE)', async () => {
+    await request(app.getHttpServer())
+      .get(`/listings/${listingId}/publications?access_token=${token}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get(`/listings/${listingId}/publications`)
+      .expect(401);
+  });
+
   it('rejects publish without a token', async () => {
     await request(app.getHttpServer()).post(`/listings/${listingId}/publish`).send({ marketplaces: ['EBAY'] }).expect(401);
   });
