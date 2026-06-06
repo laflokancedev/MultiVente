@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
 import { ListingsModule } from './listings/listings.module';
 import { PublishModule } from './publish/publish.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PublishModule } from './publish/publish.module';
     StorageModule,
     ListingsModule,
     PublishModule,
+    DashboardModule,
   ],
   controllers: [HealthController],
 })
