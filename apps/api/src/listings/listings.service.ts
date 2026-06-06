@@ -28,7 +28,10 @@ export class ListingsService {
   }
 
   listForUser(userId: string) {
-    return this.prisma.listing.findMany({ where: { userId } });
+    return this.prisma.listing.findMany({
+      where: { userId },
+      include: { publications: { select: { marketplace: true, status: true } } },
+    });
   }
 
   async getOwned(userId: string, id: string) {
