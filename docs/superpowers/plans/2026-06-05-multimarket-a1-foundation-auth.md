@@ -952,6 +952,15 @@ git commit -m "feat(api): JWT strategy, guard, auth controller + e2e"
 
 ---
 
+> **Implementation deviations (commit `1b159cf`).** (1) supertest v7's types
+> require a default import — use `import request from 'supertest'` (not
+> `import * as request`); our tsconfig has `esModuleInterop: true`. (2) Added
+> `apps/api/tsconfig.build.json` (`extends ./tsconfig.json`, `rootDir: ./src`,
+> excludes `test` + `**/*.spec.ts`) so `nest build` emits a clean `dist/` rooted
+> at `src` instead of a nested `dist/src` + `dist/test`.
+
+---
+
 ## Task 9: Next.js 15 PWA scaffold
 
 **Files:**
