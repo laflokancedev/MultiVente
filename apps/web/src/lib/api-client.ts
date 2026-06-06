@@ -2,6 +2,7 @@ import type {
   AssistedPayload,
   AuthResponse,
   CreateListingInput,
+  DashboardStats,
   Listing,
   ListingPhoto,
   LoginInput,
@@ -103,4 +104,12 @@ export function getPublications(listingId: string): Promise<Publication[]> {
 
 export function getAssisted(publicationId: string): Promise<AssistedPayload> {
   return authedJson<AssistedPayload>(`/publications/${publicationId}/assisted`, 'GET');
+}
+
+export function markPosted(publicationId: string, externalUrl?: string): Promise<Publication> {
+  return authedJson<Publication>(`/publications/${publicationId}/posted`, 'PATCH', externalUrl ? { externalUrl } : {});
+}
+
+export function getDashboard(): Promise<DashboardStats> {
+  return authedJson<DashboardStats>('/dashboard', 'GET');
 }
