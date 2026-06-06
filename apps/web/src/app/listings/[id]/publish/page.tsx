@@ -1,40 +1,67 @@
 'use client';
-import { use, useState } from 'react';
-import { publishEverywhere, getPublications, getAssisted } from '@/lib/api-client';
+import { use, useEffect, useRef, useState } from 'react';
+import { publishEverywhere, getPublications, getAssisted, markPosted } from '@/lib/api-client';
+import { shareAssisted, downloadPhotos } from '@/lib/share';
 import type { AssistedPayload, Marketplace, Publication } from '@multimarket/shared';
 
 const ALL: Marketplace[] = ['EBAY', 'VINTED', 'LEBONCOIN'];
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const TERMINAL = ['published', 'failed', 'sold', 'expired', 'awaiting_user'];
 
 export default function PublishPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [selected, setSelected] = useState<Marketplace[]>(ALL);
   const [pubs, setPubs] = useState<Publication[]>([]);
   const [assisted, setAssisted] = useState<Record<string, AssistedPayload>>({});
+  const [urls, setUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const esRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    getPublications(id).then(setPubs).catch(() => {});
+    return () => esRef.current?.close();
+  }, [id]);
+
+  // Load assisted payloads for any awaiting_user publication we don't have yet.
+  useEffect(() => {
+    for (const p of pubs) {
+      if (p.status === 'awaiting_user' && !assisted[p.id]) {
+        getAssisted(p.id).then((payload) => setAssisted((a) => ({ ...a, [p.id]: payload }))).catch(() => {});
+      }
+    }
+  }, [pubs, assisted]);
 
   function toggle(m: Marketplace) {
     setSelected((s) => (s.includes(m) ? s.filter((x) => x !== m) : [...s, m]));
   }
 
-  async function refresh() {
-    const list = await getPublications(id);
-    setPubs(list);
-    for (const p of list) {
-      if (p.status === 'awaiting_user' && !assisted[p.id]) {
-        setAssisted((a) => ({ ...a, [p.id]: undefined as unknown as AssistedPayload }));
-        getAssisted(p.id).then((payload) => setAssisted((a) => ({ ...a, [p.id]: payload }))).catch(() => {});
-      }
-    }
+  function openStream() {
+    esRef.current?.close();
+    const token = localStorage.getItem('accessToken') ?? '';
+    const es = new EventSource(`${API_URL}/listings/${id}/publications/stream?access_token=${encodeURIComponent(token)}`);
+    es.onmessage = (e) => {
+      const data = JSON.parse(e.data) as Publication[];
+      setPubs(data);
+      if (data.length > 0 && data.every((p) => TERMINAL.includes(p.status))) es.close();
+    };
+    es.onerror = () => es.close();
+    esRef.current = es;
   }
 
   async function onPublish() {
     setError(null);
     try {
       await publishEverywhere(id, selected);
-      for (let i = 0; i < 10; i++) {
-        await new Promise((r) => setTimeout(r, 800));
-        await refresh();
-      }
+      openStream();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function onPosted(pubId: string) {
+    try {
+      await markPosted(pubId, urls[pubId] || undefined);
+      setPubs(await getPublications(id));
     } catch (err) {
       setError((err as Error).message);
     }
@@ -58,10 +85,10 @@ export default function PublishPage({ params }: { params: Promise<{ id: string }
 
       <ul className="mt-6 flex flex-col gap-3">
         {pubs.map((p) => (
-          <li key={p.id} className="rounded border p-3">
+          <li key={p.id} className="rounded border p-3 dark:border-gray-700">
             <div className="flex justify-between">
               <span className="font-medium">{p.marketplace}</span>
-              <span className="text-sm text-gray-500">{p.status}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{p.status}</span>
             </div>
             {p.status === 'published' && p.externalUrl && (
               <a className="text-sm text-blue-600 underline" href={p.externalUrl} target="_blank" rel="noreferrer">
@@ -70,11 +97,33 @@ export default function PublishPage({ params }: { params: Promise<{ id: string }
             )}
             {p.status === 'failed' && <p className="text-sm text-red-600">{p.error}</p>}
             {p.status === 'awaiting_user' && assisted[p.id] && (
-              <div className="mt-2 text-sm">
-                <a className="text-blue-600 underline" href={assisted[p.id].deepLink} target="_blank" rel="noreferrer">
-                  Ouvrir {p.marketplace} pour publier
-                </a>
-                <textarea className="mt-2 w-full rounded border p-2" rows={4} readOnly value={assisted[p.id].pasteText} />
+              <div className="mt-2 flex flex-col gap-2 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <button className="rounded bg-blue-600 px-3 py-1 text-white" onClick={() => shareAssisted(assisted[p.id])}>
+                    Partager
+                  </button>
+                  <button className="rounded border px-3 py-1 dark:border-gray-700" onClick={() => navigator.clipboard?.writeText(assisted[p.id].pasteText)}>
+                    Copier le texte
+                  </button>
+                  <button className="rounded border px-3 py-1 dark:border-gray-700" onClick={() => downloadPhotos(assisted[p.id].photoUrls)}>
+                    Télécharger les photos
+                  </button>
+                  <a className="rounded border px-3 py-1 dark:border-gray-700" href={assisted[p.id].deepLink} target="_blank" rel="noreferrer">
+                    Ouvrir {p.marketplace}
+                  </a>
+                </div>
+                <textarea className="w-full rounded border p-2 dark:border-gray-700 dark:bg-gray-800" rows={4} readOnly value={assisted[p.id].pasteText} />
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 rounded border p-2 dark:border-gray-700 dark:bg-gray-800"
+                    placeholder="URL de l'annonce (optionnel)"
+                    value={urls[p.id] ?? ''}
+                    onChange={(e) => setUrls((u) => ({ ...u, [p.id]: e.target.value }))}
+                  />
+                  <button className="rounded bg-green-600 px-3 py-1 text-white" onClick={() => onPosted(p.id)}>
+                    J&apos;ai posté
+                  </button>
+                </div>
               </div>
             )}
           </li>
