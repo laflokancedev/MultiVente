@@ -33,3 +33,26 @@ describe('AuthService.register', () => {
       .rejects.toBeInstanceOf(ConflictException);
   });
 });
+
+describe('AuthService.login', () => {
+  it('logs in with correct password', async () => {
+    const svc = makeService();
+    await svc.register({ email: 'a@b.com', password: 'password123' });
+    const res = await svc.login({ email: 'a@b.com', password: 'password123' });
+    expect(res.user.email).toBe('a@b.com');
+    expect(res.tokens.accessToken).toBe('signed-token');
+  });
+
+  it('rejects an unknown email', async () => {
+    const svc = makeService();
+    await expect(svc.login({ email: 'nobody@b.com', password: 'x' }))
+      .rejects.toThrow('Invalid credentials');
+  });
+
+  it('rejects a wrong password', async () => {
+    const svc = makeService();
+    await svc.register({ email: 'a@b.com', password: 'password123' });
+    await expect(svc.login({ email: 'a@b.com', password: 'wrongpass' }))
+      .rejects.toThrow('Invalid credentials');
+  });
+});
