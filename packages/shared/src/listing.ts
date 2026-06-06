@@ -1,3 +1,5 @@
+import type { Marketplace, PublicationStatus } from './publish';
+
 export type Condition = 'new' | 'like_new' | 'good' | 'fair';
 export type ListingStatus = 'draft' | 'active' | 'sold' | 'archived';
 
@@ -22,6 +24,7 @@ export interface Listing {
   shippingOptions: unknown;
   status: ListingStatus;
   photos: ListingPhoto[];
+  publications?: { marketplace: Marketplace; status: PublicationStatus }[];
   createdAt: string;
   updatedAt: string;
 }
