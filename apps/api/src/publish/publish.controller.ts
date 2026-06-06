@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post, Req, Sse, UseGuards } from '@nestjs/common';
-import { IsArray, IsIn } from 'class-validator';
+import { Body, Controller, Get, Param, Patch, Post, Req, Sse, UseGuards } from '@nestjs/common';
+import { IsArray, IsIn, IsOptional, IsUrl } from 'class-validator';
 import { interval, switchMap, map, takeWhile, type Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Marketplace } from '@multimarket/shared';
@@ -9,6 +9,12 @@ class PublishDto {
   @IsArray()
   @IsIn(['EBAY', 'VINTED', 'LEBONCOIN'], { each: true })
   marketplaces!: Marketplace[];
+}
+
+class MarkPostedDto {
+  @IsOptional()
+  @IsUrl()
+  externalUrl?: string;
 }
 
 const TERMINAL = ['published', 'failed', 'sold', 'expired', 'awaiting_user'];
@@ -31,6 +37,11 @@ export class PublishController {
   @Get('publications/:pubId/assisted')
   assisted(@Req() req: any, @Param('pubId') pubId: string) {
     return this.publish.getAssisted(req.user.id, pubId);
+  }
+
+  @Patch('publications/:pubId/posted')
+  posted(@Req() req: any, @Param('pubId') pubId: string, @Body() dto: MarkPostedDto) {
+    return this.publish.markPosted(req.user.id, pubId, dto.externalUrl);
   }
 
   @Sse('listings/:id/publications/stream')
