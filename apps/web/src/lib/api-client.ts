@@ -1,9 +1,12 @@
 import type {
+  AssistedPayload,
   AuthResponse,
   CreateListingInput,
   Listing,
   ListingPhoto,
   LoginInput,
+  Marketplace,
+  Publication,
   PresignResponse,
   RegisterInput,
   UpdateListingInput,
@@ -88,4 +91,16 @@ export async function uploadPhotoFile(listingId: string, file: File, order: numb
   });
   if (!put.ok) throw new Error(`Upload failed (${put.status})`);
   return attachPhoto(listingId, key, order);
+}
+
+export function publishEverywhere(listingId: string, marketplaces: Marketplace[]): Promise<Publication[]> {
+  return authedJson<Publication[]>(`/listings/${listingId}/publish`, 'POST', { marketplaces });
+}
+
+export function getPublications(listingId: string): Promise<Publication[]> {
+  return authedJson<Publication[]>(`/listings/${listingId}/publications`, 'GET');
+}
+
+export function getAssisted(publicationId: string): Promise<AssistedPayload> {
+  return authedJson<AssistedPayload>(`/publications/${publicationId}/assisted`, 'GET');
 }
