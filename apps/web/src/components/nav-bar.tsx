@@ -23,6 +23,7 @@ export function NavBar() {
           <>
             <a href="/dashboard">Tableau de bord</a>
             <a href="/listings">Mes annonces</a>
+            <a href="/accounts">Mes comptes</a>
             <a href="/listings/new">+ Nouvelle</a>
             <button onClick={logout} className="text-red-600">Déconnexion</button>
           </>
