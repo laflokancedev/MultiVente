@@ -8,6 +8,7 @@ import { StorageModule } from './storage/storage.module';
 import { ListingsModule } from './listings/listings.module';
 import { PublishModule } from './publish/publish.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AccountsModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ListingsModule,
     PublishModule,
     DashboardModule,
+    AccountsModule,
   ],
   controllers: [HealthController],
 })
