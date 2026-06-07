@@ -93,14 +93,31 @@ describe('Publish (e2e)', () => {
     expect(res.body).toHaveProperty('publicationsByStatus');
   });
 
-  it('authenticates via the access_token query param (for SSE)', async () => {
+  it('accepts the access_token query param only on the SSE route, not on other routes', async () => {
+    // The query-param token is scoped to the SSE stream route, so a normal
+    // (non-SSE) route must reject it and still require the Authorization header.
     await request(app.getHttpServer())
       .get(`/listings/${listingId}/publications?access_token=${token}`)
-      .expect(200);
+      .expect(401);
     await request(app.getHttpServer())
       .get(`/listings/${listingId}/publications`)
       .expect(401);
+    // The header path still authenticates the same route.
+    await request(app.getHttpServer())
+      .get(`/listings/${listingId}/publications`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
+
+  it('guards the SSE stream route and accepts the scoped query token', async () => {
+    await request(app.getHttpServer())
+      .get(`/listings/${listingId}/publications/stream`)
+      .expect(401);
+    // All publications are terminal by now, so the stream emits once and completes.
+    const res = await request(app.getHttpServer())
+      .get(`/listings/${listingId}/publications/stream?access_token=${token}`);
+    expect(res.status).toBe(200);
+  }, 15000);
 
   it('rejects publish without a token', async () => {
     await request(app.getHttpServer()).post(`/listings/${listingId}/publish`).send({ marketplaces: ['EBAY'] }).expect(401);

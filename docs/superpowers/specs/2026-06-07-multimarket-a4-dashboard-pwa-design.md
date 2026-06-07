@@ -187,8 +187,11 @@ export interface DashboardStats {
 
 ## 8. Risks & open items
 
-- **Token-in-URL (SSE):** accepted for the MVP on localhost; for production, switch to a
-  short-lived stream token or a cookie-scoped SSE route. Isolated in `JwtStrategy` so it is
+- **Token-in-URL (SSE):** the `?access_token` extractor is **scoped to the SSE stream route
+  only** (a custom `sseQueryTokenExtractor` in `JwtStrategy` returns the query token solely
+  when the request path ends with `/publications/stream`); every other route remains
+  header-only. Accepted for the MVP on localhost; for production, switch to a short-lived
+  single-use stream ticket or a cookie-scoped SSE route. Isolated in `JwtStrategy` so it is
   cheap to change.
 - **Web Share with files:** behaviour varies by browser/OS; the `lib/share.ts` feature
   detection (`canShare({files})`) must degrade cleanly. Real-device validation recommended
