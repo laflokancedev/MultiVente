@@ -4,6 +4,9 @@ import type { MarketplaceAdapter } from './adapter';
 import { VintedAdapter } from './vinted.adapter';
 import { LeboncoinAdapter } from './leboncoin.adapter';
 import { EbayAdapter } from './ebay.adapter';
+import { WallapopAdapter } from './wallapop.adapter';
+import { KleinanzeigenAdapter } from './kleinanzeigen.adapter';
+import { SubitoAdapter } from './subito.adapter';
 import { EBAY_CLIENT, type EbayClient } from './ebay.client';
 
 @Injectable()
@@ -15,6 +18,9 @@ export class AdapterRegistry {
       EBAY: new EbayAdapter(ebayClient),
       VINTED: new VintedAdapter(),
       LEBONCOIN: new LeboncoinAdapter(),
+      WALLAPOP: new WallapopAdapter(),
+      KLEINANZEIGEN: new KleinanzeigenAdapter(),
+      SUBITO: new SubitoAdapter(),
     };
   }
 
