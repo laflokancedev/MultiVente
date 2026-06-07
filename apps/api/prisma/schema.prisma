@@ -19,6 +19,7 @@ model User {
   plan         Plan     @default(free)
   createdAt    DateTime @default(now())
   listings     Listing[]
+  marketplaceAccounts MarketplaceAccount[]
 }
 
 enum ListingStatus {
@@ -70,6 +71,9 @@ enum Marketplace {
   EBAY
   VINTED
   LEBONCOIN
+  WALLAPOP
+  KLEINANZEIGEN
+  SUBITO
 }
 
 enum PublishMode {
@@ -101,4 +105,16 @@ model Publication {
   updatedAt   DateTime          @updatedAt
 
   @@unique([listingId, marketplace])
+}
+
+model MarketplaceAccount {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketplace Marketplace
+  connected   Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, marketplace])
 }

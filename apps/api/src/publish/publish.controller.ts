@@ -2,12 +2,14 @@ import { Body, Controller, Get, Param, Patch, Post, Req, Sse, UseGuards } from '
 import { IsArray, IsIn, IsOptional, IsUrl } from 'class-validator';
 import { interval, switchMap, map, takeWhile, type Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { Marketplace } from '@multimarket/shared';
+import { MARKETPLACES, type Marketplace } from '@multimarket/shared';
 import { PublishService } from './publish.service';
+
+const MARKETPLACE_IDS = MARKETPLACES.map((m) => m.id);
 
 class PublishDto {
   @IsArray()
-  @IsIn(['EBAY', 'VINTED', 'LEBONCOIN'], { each: true })
+  @IsIn(MARKETPLACE_IDS, { each: true })
   marketplaces!: Marketplace[];
 }
 

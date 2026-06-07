@@ -1,4 +1,4 @@
-export type Marketplace = 'EBAY' | 'VINTED' | 'LEBONCOIN';
+export type Marketplace = 'EBAY' | 'VINTED' | 'LEBONCOIN' | 'WALLAPOP' | 'KLEINANZEIGEN' | 'SUBITO';
 export type PublishMode = 'auto' | 'assisted';
 export type PublicationStatus =
   | 'pending'

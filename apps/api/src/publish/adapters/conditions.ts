@@ -20,3 +20,24 @@ export const EBAY_CONDITION: Record<Condition, string> = {
   good: 'USED_GOOD',
   fair: 'USED_ACCEPTABLE',
 };
+
+export const WALLAPOP_CONDITION: Record<Condition, string> = {
+  new: 'Nuevo',
+  like_new: 'Como nuevo',
+  good: 'En buen estado',
+  fair: 'Aceptable',
+};
+
+export const KLEINANZEIGEN_CONDITION: Record<Condition, string> = {
+  new: 'Neu',
+  like_new: 'Neuwertig',
+  good: 'Gut',
+  fair: 'In Ordnung',
+};
+
+export const SUBITO_CONDITION: Record<Condition, string> = {
+  new: 'Nuovo',
+  like_new: 'Come nuovo',
+  good: 'Buono',
+  fair: 'Accettabile',
+};

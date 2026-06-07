@@ -1,16 +1,17 @@
 'use client';
 import { use, useEffect, useRef, useState } from 'react';
-import { publishEverywhere, getPublications, getAssisted, markPosted } from '@/lib/api-client';
+import { publishEverywhere, getPublications, getAssisted, markPosted, getAccounts } from '@/lib/api-client';
 import { shareAssisted, downloadPhotos } from '@/lib/share';
+import { connectedMarketplaces, marketplaceLabel } from '@/lib/marketplaces';
 import type { AssistedPayload, Marketplace, Publication } from '@multimarket/shared';
 
-const ALL: Marketplace[] = ['EBAY', 'VINTED', 'LEBONCOIN'];
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const TERMINAL = ['published', 'failed', 'sold', 'expired', 'awaiting_user'];
 
 export default function PublishPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [selected, setSelected] = useState<Marketplace[]>(ALL);
+  const [available, setAvailable] = useState<Marketplace[]>([]);
+  const [selected, setSelected] = useState<Marketplace[]>([]);
   const [pubs, setPubs] = useState<Publication[]>([]);
   const [assisted, setAssisted] = useState<Record<string, AssistedPayload>>({});
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -18,6 +19,13 @@ export default function PublishPage({ params }: { params: Promise<{ id: string }
   const esRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
+    getAccounts()
+      .then((accts) => {
+        const conn = connectedMarketplaces(accts);
+        setAvailable(conn);
+        setSelected(conn);
+      })
+      .catch(() => {});
     getPublications(id).then(setPubs).catch(() => {});
     return () => esRef.current?.close();
   }, [id]);
@@ -70,15 +78,21 @@ export default function PublishPage({ params }: { params: Promise<{ id: string }
   return (
     <main className="mx-auto mt-10 max-w-2xl p-6">
       <h1 className="text-xl font-semibold">Publier partout</h1>
-      <div className="mt-4 flex gap-4">
-        {ALL.map((m) => (
-          <label key={m} className="flex items-center gap-2">
-            <input type="checkbox" checked={selected.includes(m)} onChange={() => toggle(m)} />
-            {m}
-          </label>
-        ))}
-      </div>
-      <button className="mt-4 rounded bg-blue-600 px-4 py-2 text-white" onClick={onPublish}>
+      {available.length === 0 ? (
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          Aucun marketplace activé. Active-les dans <a className="text-blue-600 underline" href="/accounts">Mes comptes</a>.
+        </p>
+      ) : (
+        <div className="mt-4 flex flex-wrap gap-4">
+          {available.map((m) => (
+            <label key={m} className="flex items-center gap-2">
+              <input type="checkbox" checked={selected.includes(m)} onChange={() => toggle(m)} />
+              {marketplaceLabel(m)}
+            </label>
+          ))}
+        </div>
+      )}
+      <button className="mt-4 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50" onClick={onPublish} disabled={selected.length === 0}>
         Publier partout
       </button>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -87,7 +101,7 @@ export default function PublishPage({ params }: { params: Promise<{ id: string }
         {pubs.map((p) => (
           <li key={p.id} className="rounded border p-3 dark:border-gray-700">
             <div className="flex justify-between">
-              <span className="font-medium">{p.marketplace}</span>
+              <span className="font-medium">{marketplaceLabel(p.marketplace)}</span>
               <span className="text-sm text-gray-500 dark:text-gray-400">{p.status}</span>
             </div>
             {p.status === 'published' && p.externalUrl && (
@@ -109,7 +123,7 @@ export default function PublishPage({ params }: { params: Promise<{ id: string }
                     Télécharger les photos
                   </button>
                   <a className="rounded border px-3 py-1 dark:border-gray-700" href={assisted[p.id].deepLink} target="_blank" rel="noreferrer">
-                    Ouvrir {p.marketplace}
+                    Ouvrir {marketplaceLabel(p.marketplace)}
                   </a>
                 </div>
                 <textarea className="w-full rounded border p-2 dark:border-gray-700 dark:bg-gray-800" rows={4} readOnly value={assisted[p.id].pasteText} />
