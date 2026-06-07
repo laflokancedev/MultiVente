@@ -4,6 +4,7 @@ import type {
   CreateListingInput,
   DashboardStats,
   Listing,
+  MarketplaceAccountView,
   ListingPhoto,
   LoginInput,
   Marketplace,
@@ -112,4 +113,12 @@ export function markPosted(publicationId: string, externalUrl?: string): Promise
 
 export function getDashboard(): Promise<DashboardStats> {
   return authedJson<DashboardStats>('/dashboard', 'GET');
+}
+
+export function getAccounts(): Promise<MarketplaceAccountView[]> {
+  return authedJson<MarketplaceAccountView[]>('/accounts', 'GET');
+}
+
+export function setAccountConnected(marketplace: Marketplace, connected: boolean): Promise<MarketplaceAccountView> {
+  return authedJson<MarketplaceAccountView>(`/accounts/${marketplace}`, 'PATCH', { connected });
 }
